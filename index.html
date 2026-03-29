@@ -1,23 +1,407 @@
-FOCUS OS
-Bonjour
-Ton tableau de bord du jour
-0
-Tâches faites
-0
-Jours de suite
-—
-Score du jour
-Aujourd'hui
-Habitudes
-Progrès
-Bilan
-Commence par ta tâche la plus difficile dans le premier bloc. C'est là que ta concentration est maximale.
-BLOCS DE TEMPS
-
-+ Ajouter un bloc
-OBJECTIF DE LA SEMAINE
-
-Construire une routine matinale stable
-Modifier
-Progression
-60%
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FOCUS OS">
+<meta name="mobile-web-app-capable" content="yes">
+<title>FOCUS OS</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --accent: #185FA5;
+  --accent-light: #E6F1FB;
+  --accent-mid: #378ADD;
+  --green: #0F6E56;
+  --amber: #BA7517;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --surface: #ffffff;
+  --base: #f5f5f4;
+  --border: rgba(0,0,0,0.1);
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f1f0ee;
+    --muted: #9ca3af;
+    --surface: #1c1c1e;
+    --base: #2c2c2e;
+    --border: rgba(255,255,255,0.1);
+    --accent-light: #042C53;
+  }
+  body { background: #000; }
+  .insight { background: #042C53 !important; }
+  .insight p { color: #85B7EB !important; }
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f0f0f0;
+  color: var(--text);
+  min-height: 100vh;
+}
+.status-bar-spacer { height: env(safe-area-inset-top, 44px); background: var(--accent); }
+.header { background: var(--accent); color: white; padding: 1rem 1.25rem 1.25rem; }
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.app-label { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; opacity: 0.7; }
+.date-str { font-size: 12px; opacity: 0.8; }
+.header h1 { font-size: 26px; font-weight: 600; }
+.header p { font-size: 14px; opacity: 0.75; margin-top: 2px; }
+.metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
+.metric { background: var(--surface); padding: 12px 8px; text-align: center; }
+.metric-val { font-size: 24px; font-weight: 600; color: var(--accent); }
+.metric-label { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.nav { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.nav-btn { flex: 1; padding: 12px 4px; font-size: 11px; font-weight: 500; border: none; background: transparent; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; }
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.section { display: none; padding: 1rem; padding-bottom: calc(1rem + env(safe-area-inset-bottom, 20px)); }
+.section.active { display: block; }
+.card { background: var(--surface); border-radius: var(--radius-lg); padding: 1rem 1.125rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.card h3 { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.875rem; }
+.habit-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.habit-item:last-child { border-bottom: none; }
+.habit-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; background: var(--base); }
+.habit-check.done { background: var(--accent); border-color: var(--accent); }
+.habit-check.done::after { content: ''; display: block; width: 9px; height: 6px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translateY(-1px); }
+.habit-name { font-size: 15px; color: var(--text); }
+.habit-streak { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.habit-streak.hot { color: #BA7517; }
+.tag { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; background: var(--accent-light); color: var(--accent); white-space: nowrap; flex-shrink: 0; }
+.block-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.block-item:last-child { border-bottom: none; }
+.block-time { font-size: 12px; color: var(--muted); width: 42px; flex-shrink: 0; }
+.block-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.block-task { font-size: 15px; color: var(--text); flex: 1; }
+.block-done .block-task { text-decoration: line-through; color: var(--muted); }
+.check-btn { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: var(--base); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; transition: all 0.15s; }
+.check-btn.done { background: var(--green); border-color: var(--green); color: white; }
+.progress-bar { height: 6px; background: var(--base); border-radius: 3px; overflow: hidden; margin: 6px 0 4px; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.progress-label { display: flex; justify-content: space-between; font-size: 13px; }
+.btn-primary { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+.btn-outline { width: 100%; padding: 11px; background: transparent; color: var(--accent); border: 1.5px solid var(--accent); border-radius: var(--radius); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 0.5rem; }
+.insight { background: var(--accent-light); border-radius: var(--radius); padding: 0.875rem 1rem; margin-bottom: 0.75rem; border-left: 3px solid var(--accent); }
+.insight p { font-size: 13px; color: #0C447C; line-height: 1.55; }
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 0.5rem; }
+.week-day { text-align: center; }
+.week-label { font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+.week-dot { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+.wd-done { background: var(--accent); color: white; }
+.wd-partial { background: var(--accent-light); color: var(--accent); }
+.wd-miss { background: var(--base); color: var(--muted); }
+.wd-today { background: var(--accent); color: white; outline: 2.5px solid var(--accent-mid); outline-offset: 2px; }
+.score-circle { display: flex; flex-direction: column; align-items: center; padding: 0.5rem 0 1rem; }
+.score-circle svg { width: 120px; height: 120px; }
+textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--base); color: var(--text); font-size: 15px; resize: none; font-family: inherit; outline: none; }
+textarea:focus { border-color: var(--accent); }
+.add-form { display: none; background: var(--base); border-radius: var(--radius); padding: 0.75rem; margin-top: 0.75rem; }
+.add-form.open { display: block; }
+.add-form input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font-size: 15px; margin-bottom: 8px; font-family: inherit; outline: none; }
+.add-form input:focus { border-color: var(--accent); }
+.add-row { display: flex; gap: 8px; }
+.add-row input { flex: 1; margin-bottom: 0; }
+.add-confirm { padding: 10px 14px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; }
+.energy-row { display: flex; gap: 8px; margin-top: 4px; }
+.energy-btn { flex: 1; padding: 10px 6px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; }
+.energy-btn.sel { background: var(--accent); color: white; border-color: var(--accent); }
+.bilan-entry { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.bilan-entry:last-child { border-bottom: none; }
+.bilan-date { font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.bilan-line { color: var(--muted); line-height: 1.5; }
+.toast { position: fixed; bottom: calc(1.5rem + env(safe-area-inset-bottom, 20px)); left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a1a; color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 999; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.field-wrap { margin-bottom: 1rem; }
+label.field-label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; font-weight: 500; }
+.month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; }
+.month-cell-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.month-cell-val { font-size: 22px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="status-bar-spacer"></div>
+<div class="header">
+  <div class="header-top">
+    <span class="app-label">FOCUS OS</span>
+    <span class="date-str" id="dateStr"></span>
+  </div>
+  <h1 id="greetMsg">Bonjour</h1>
+  <p>Ton tableau de bord du jour</p>
+</div>
+<div class="metric-row">
+  <div class="metric"><div class="metric-val" id="mDone">0</div><div class="metric-label">Tâches faites</div></div>
+  <div class="metric"><div class="metric-val" id="mStreak">0</div><div class="metric-label">Jours de suite</div></div>
+  <div class="metric"><div class="metric-val" id="mScore">—</div><div class="metric-label">Score du jour</div></div>
+</div>
+<div class="nav">
+  <button class="nav-btn active" onclick="switchTab('today',this)">Aujourd'hui</button>
+  <button class="nav-btn" onclick="switchTab('habits',this)">Habitudes</button>
+  <button class="nav-btn" onclick="switchTab('progress',this)">Progrès</button>
+  <button class="nav-btn" onclick="switchTab('reflect',this)">Bilan</button>
+</div>
+<div class="section active" id="tab-today">
+  <div class="insight"><p id="dailyTip">Commence par ta tâche la plus difficile. Ta concentration est maximale le matin.</p></div>
+  <div class="card">
+    <h3>Blocs de temps</h3>
+    <div id="blocksList"></div>
+    <button class="btn-outline" onclick="toggleAddBlock()">+ Ajouter un bloc</button>
+    <div class="add-form" id="addBlockForm">
+      <div class="add-row">
+        <input type="time" id="newBlockTime" value="10:00" style="max-width:90px">
+        <input type="text" id="newBlockName" placeholder="Tâche...">
+        <button class="add-confirm" onclick="addBlock()">OK</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Objectif de la semaine</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+      <div style="flex:1"><div style="font-size:15px;font-weight:500;color:var(--text)" id="weekGoalTxt">Construire une routine matinale stable</div></div>
+      <button onclick="editGoal()" style="margin-left:10px;font-size:12px;background:var(--base);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--muted)">Modifier</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="goalBar" style="width:60%;background:var(--accent)"></div></div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="font-size:12px;color:var(--muted)">Progression</span>
+      <span style="font-size:12px;color:var(--accent);font-weight:600" id="goalPct">60%</span>
+    </div>
+    <input type="range" min="0" max="100" value="60" step="1" id="goalSlider" oninput="updateGoal(this.value)" style="width:100%;margin-top:10px;accent-color:var(--accent)">
+  </div>
+</div>
+<div class="section" id="tab-habits">
+  <div class="card">
+    <h3>Habitudes du jour</h3>
+    <div id="habitList"></div>
+    <button class="btn-outline" onclick="toggleAddHabit()">+ Nouvelle habitude</button>
+    <div class="add-form" id="addHabitForm">
+      <input type="text" id="newHabitName" placeholder="Nom de l'habitude...">
+      <input type="text" id="newHabitTag" placeholder="Catégorie (ex: Focus, Santé...)">
+      <button class="add-confirm" style="width:100%" onclick="addHabit()">Ajouter</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Régularité cette semaine</h3>
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+</div>
+<div class="section" id="tab-progress">
+  <div class="card">
+    <h3>Score de discipline</h3>
+    <div class="score-circle">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="314" id="scoreRing" stroke-dashoffset="95" transform="rotate(-90 60 60)"/>
+        <text x="60" y="55" text-anchor="middle" font-size="26" font-weight="700" fill="var(--accent)" id="scoreNum">70</text>
+        <text x="60" y="72" text-anchor="middle" font-size="12" fill="#6b7280">/100</text>
+      </svg>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Semaine en cours</div>
+    </div>
+    <div style="margin-bottom:0.75rem">
+      <div class="progress-label"><span style="color:var(--text)">Habitudes complétées</span><span style="color:var(--muted)">68%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:68%;background:var(--accent)"></div></div>
+    </div>
+    <div style="margin-bottom:0.75rem">
+      <div class="progress-label"><span style="color:var(--text)">Blocs respectés</span><span style="color:var(--muted)">75%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:75%;background:var(--green)"></div></div>
+    </div>
+    <div>
+      <div class="progress-label"><span style="color:var(--text)">Bilans réalisés</span><span style="color:var(--muted)">40%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:40%;background:var(--amber)"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Progression mensuelle</h3>
+    <div class="month-grid">
+      <div><div class="month-cell-label">Sem 1</div><div class="month-cell-val" style="color:var(--muted)">52</div></div>
+      <div><div class="month-cell-label">Sem 2</div><div class="month-cell-val" style="color:var(--muted)">61</div></div>
+      <div><div class="month-cell-label">Sem 3</div><div class="month-cell-val" style="color:var(--accent)">70</div></div>
+      <div><div class="month-cell-label">Sem 4</div><div class="month-cell-val" style="color:var(--muted)">—</div></div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-top:0.875rem;line-height:1.5">+18 points en 3 semaines. Axe le plus faible : les bilans du soir.</p>
+  </div>
+  <div class="insight"><p>Ta discipline matinale est ta plus grande force. Concentre-toi sur les bilans du soir pour franchir les 80 points.</p></div>
+</div>
+<div class="section" id="tab-reflect">
+  <div class="card">
+    <h3>Bilan du jour</h3>
+    <div class="field-wrap">
+      <label class="field-label">Qu'est-ce que j'ai bien fait aujourd'hui ?</label>
+      <textarea id="r1" rows="2" placeholder="Ma réussite du jour..."></textarea>
+    </div>
+    <div class="field-wrap">
+      <label class="field-label">Qu'est-ce qui m'a freiné ?</label>
+      <textarea id="r2" rows="2" placeholder="Mon obstacle du jour..."></textarea>
+    </div>
+    <div class="field-wrap">
+      <label class="field-label">Mon intention pour demain :</label>
+      <textarea id="r3" rows="2" placeholder="Demain je vais..."></textarea>
+    </div>
+    <div class="field-wrap" style="margin-bottom:0">
+      <label class="field-label">Niveau d'énergie aujourd'hui</label>
+      <div class="energy-row">
+        <button class="energy-btn" data-val="1" onclick="setEnergy(this)">Bas</button>
+        <button class="energy-btn" data-val="2" onclick="setEnergy(this)">Moyen</button>
+        <button class="energy-btn" data-val="3" onclick="setEnergy(this)">Élevé</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveBilan()">Enregistrer le bilan</button>
+  </div>
+  <div class="card" id="bilanHistory" style="display:none">
+    <h3>Bilans précédents</h3>
+    <div id="bilanList"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const tips = [
+  'Commence par ta tâche la plus difficile. Ta concentration est maximale le matin.',
+  'Une seule chose à la fois. La multitâche réduit la productivité de 40%.',
+  'Planifie demain ce soir. Tu économises 10 min de décision au réveil.',
+  'Chaque habitude maintenue renforce ton identité. Tu es quelquun de discipliné.',
+  'Le momentum se construit par des petites victoires répétées. Continue.',
+  'La discipline est un muscle. Chaque effort daujourdhui facilite demain.',
+];
+const S = {
+  habits: [
+    {id:1,name:'Lever à heure fixe',tag:'Discipline',streak:4,doneToday:false},
+    {id:2,name:'Planifier la journée (10 min)',tag:'Productivité',streak:2,doneToday:false},
+    {id:3,name:'Aucun téléphone avant 9h',tag:'Focus',streak:1,doneToday:false},
+    {id:4,name:'Bilan de fin de journée',tag:'Réflexion',streak:0,doneToday:false},
+    {id:5,name:'Lire 20 min',tag:'Croissance',streak:3,doneToday:false},
+  ],
+  blocks: [
+    {id:1,time:'08:00',name:'Revue des priorités',done:false,color:'#185FA5'},
+    {id:2,time:'09:00',name:'Travail en profondeur #1',done:false,color:'#0F6E56'},
+    {id:3,time:'11:00',name:'Emails & communications',done:false,color:'#BA7517'},
+    {id:4,time:'14:00',name:'Travail en profondeur #2',done:false,color:'#0F6E56'},
+    {id:5,time:'17:00',name:'Revue de fin de journée',done:false,color:'#993556'},
+  ],
+  bilans:[],energy:null,streak:4,weekGoal:'Construire une routine matinale stable',goalPct:60,nextId:10
+};
+function init() {
+  const now = new Date();
+  const h = now.getHours();
+  document.getElementById('greetMsg').textContent = h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
+  document.getElementById('dateStr').textContent = now.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  document.getElementById('dailyTip').textContent = tips[now.getDay()%tips.length];
+  document.getElementById('mStreak').textContent = S.streak;
+  renderBlocks(); renderHabits(); renderWeekGrid();
+}
+function switchTab(id,btn) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+function renderBlocks() {
+  document.getElementById('blocksList').innerHTML = S.blocks.map(b=>`
+    <div class="block-item ${b.done?'block-done':''}">
+      <span class="block-time">${b.time}</span>
+      <div class="block-dot" style="background:${b.color}"></div>
+      <span class="block-task">${b.name}</span>
+      <button class="check-btn ${b.done?'done':''}" onclick="toggleBlock(${b.id})">${b.done?'✓':''}</button>
+    </div>`).join('');
+  updateMetrics();
+}
+function toggleBlock(id) {
+  const b=S.blocks.find(x=>x.id===id); if(b) b.done=!b.done; renderBlocks();
+}
+function updateMetrics() {
+  const done=S.blocks.filter(b=>b.done).length, total=S.blocks.length;
+  document.getElementById('mDone').textContent=done;
+  document.getElementById('mScore').textContent=total?Math.round(done/total*100)+'%':'—';
+}
+function toggleAddBlock(){document.getElementById('addBlockForm').classList.toggle('open');}
+function addBlock() {
+  const t=document.getElementById('newBlockTime').value;
+  const n=document.getElementById('newBlockName').value.trim();
+  if(!n)return;
+  S.blocks.push({id:S.nextId++,time:t,name:n,done:false,color:'#185FA5'});
+  S.blocks.sort((a,b)=>a.time.localeCompare(b.time));
+  document.getElementById('newBlockName').value='';
+  document.getElementById('addBlockForm').classList.remove('open');
+  renderBlocks(); showToast('Bloc ajouté');
+}
+function renderHabits() {
+  document.getElementById('habitList').innerHTML = S.habits.map(h=>`
+    <div class="habit-item">
+      <div class="habit-check ${h.doneToday?'done':''}" onclick="toggleHabit(${h.id})"></div>
+      <div style="flex:1">
+        <div class="habit-name">${h.name}</div>
+        <div class="habit-streak ${h.streak>=3?'hot':''}">Série : ${h.streak} jour${h.streak!==1?'s':''}</div>
+      </div>
+      <span class="tag">${h.tag}</span>
+    </div>`).join('');
+}
+function toggleHabit(id) {
+  const h=S.habits.find(x=>x.id===id); if(!h)return;
+  h.doneToday=!h.doneToday; h.doneToday?h.streak++:h.streak=Math.max(0,h.streak-1);
+  renderHabits();
+}
+function toggleAddHabit(){document.getElementById('addHabitForm').classList.toggle('open');}
+function addHabit() {
+  const n=document.getElementById('newHabitName').value.trim();
+  const tag=document.getElementById('newHabitTag').value.trim()||'Nouveau';
+  if(!n)return;
+  S.habits.push({id:S.nextId++,name:n,tag,streak:0,doneToday:false});
+  document.getElementById('newHabitName').value='';
+  document.getElementById('newHabitTag').value='';
+  document.getElementById('addHabitForm').classList.remove('open');
+  renderHabits(); showToast('Habitude ajoutée');
+}
+function renderWeekGrid() {
+  const labels=['L','M','M','J','V','S','D'];
+  const scores=['done','done','partial','done','miss','today','miss'];
+  document.getElementById('weekGrid').innerHTML=labels.map((d,i)=>{
+    const cls=scores[i]==='today'?'wd-today':scores[i]==='done'?'wd-done':scores[i]==='partial'?'wd-partial':'wd-miss';
+    return `<div class="week-day"><div class="week-label">${d}</div><div class="week-dot ${cls}">${d}</div></div>`;
+  }).join('');
+}
+function updateGoal(v) {
+  S.goalPct=parseInt(v);
+  document.getElementById('goalBar').style.width=v+'%';
+  document.getElementById('goalPct').textContent=v+'%';
+}
+function editGoal() {
+  const ng=prompt('Nouvel objectif :',S.weekGoal);
+  if(ng&&ng.trim()){S.weekGoal=ng.trim();document.getElementById('weekGoalTxt').textContent=S.weekGoal;showToast('Objectif mis à jour');}
+}
+function setEnergy(btn) {
+  document.querySelectorAll('.energy-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel'); S.energy=btn.dataset.val;
+}
+function saveBilan() {
+  const r1=document.getElementById('r1').value.trim();
+  const r2=document.getElementById('r2').value.trim();
+  const r3=document.getElementById('r3').value.trim();
+  if(!r1&&!r2&&!r3){showToast('Remplis au moins un champ');return;}
+  S.bilans.unshift({date:new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}),r1,r2,r3,energy:S.energy});
+  document.getElementById('r1').value='';
+  document.getElementById('r2').value='';
+  document.getElementById('r3').value='';
+  S.energy=null;
+  document.querySelectorAll('.energy-btn').forEach(b=>b.classList.remove('sel'));
+  S.streak++; document.getElementById('mStreak').textContent=S.streak;
+  renderBilans(); showToast('Bilan enregistré ✓');
+}
+function renderBilans() {
+  const el=document.getElementById('bilanHistory');
+  el.style.display=S.bilans.length?'block':'none';
+  document.getElementById('bilanList').innerHTML=S.bilans.slice(0,5).map(b=>`
+    <div class="bilan-entry">
+      <div class="bilan-date">${b.date} — Énergie : ${'★'.repeat(b.energy||0)}${'☆'.repeat(3-(b.energy||0))}</div>
+      ${b.r1?`<div class="bilan-line">✓ ${b.r1}</div>`:''}
+      ${b.r2?`<div class="bilan-line">↯ ${b.r2}</div>`:''}
+      ${b.r3?`<div class="bilan-line">→ ${b.r3}</div>`:''}
+    </div>`).join('');
+}
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+init();
+</script>
+</body>
+</html>
